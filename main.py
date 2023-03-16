@@ -1,61 +1,61 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import odeint
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.integrate import solve_ivp
 
-# Constants
-G = 6.674e-11 # гравитационная постоянная
-M_earth = 5.972e24 # масса Земли
-R_earth = 6.371e6 # радиус Земли
+# Гравитационная постоянная Земли (м^3/с^2)
+G = 6.67430e-11
+M = 5.97219e24
 
-# Dictionary of bodies
-bodies = {
-    'ISS': {'mass': 419725, 'height': 408000, 'velocity': 7660},
-    'Hubble Space Telescope': {'mass': 11110, 'height': 540000, 'velocity': 7660},
-    'Terra': {'mass': 1060, 'height': 705000, 'velocity': 7480},
-    'Aqua': {'mass': 1390, 'height': 705000, 'velocity': 7480}
-}
+# Начальные условия для МКС
+a = 6771000  # Большая полуось (м)
+e = 0.0015   # Эксцентриситет орбиты
 
-# Select a body
-body = 'ISS'
+# Параметры орбиты
+h = np.sqrt(G * M * a * (1 - e**2))
+T = 2 * np.pi * np.sqrt(a**3 / (G * M))
 
-# Parameters of the selected body
-m = bodies[body]['mass']
-h = bodies[body]['height']
-v0 = bodies[body]['velocity']
-
-# Координаты тела в начальный момент времени
-x0 = R_earth + h
-y0 = 0
-vx0 = 0
-vy0 = v0
-
-# Функция, описывающая движение тела
-def motion(state, t):
-    x, y, vx, vy = state
-    r = np.sqrt(x**2 + y**2)
-    ax = -G*M_earth*x/r**3
-    ay = -G*M_earth*y/r**3
-    return [vx, vy, ax, ay]
-
-# Время моделирования
-t = np.linspace(0, 2*3600, 10000)
+# Уравнения движения
+def orbit(t, y):
+    x, y, z, vx, vy, vz = y
+    r = np.sqrt(x**2 + y**2 + z**2)
+    return [
+        vx,
+        vy,
+        vz,
+        -G * M * x / r**3,
+        -G * M * y / r**3,
+        -G * M * z / r**3,
+    ]
 
 # Начальные условия
-state0 = [x0, y0, vx0, vy0]
+r0 = a * (1 - e)
+v0 = h / r0
 
-# Решаем уравнения движения
-state = odeint(motion, state0, t)
+# Начальные значения (x, y, z, vx, vy, vz)
+initial_conditions = [r0, 0, 0, 0, v0, 0]
 
-# Извлекаем координаты и скорости
-x = state[:, 0]
-y = state[:, 1]
-vx = state[:, 2]
-vy = state[:, 3]
+# Решение системы дифференциальных уравнений
+sol = solve_ivp(orbit, (0, T), initial_conditions, rtol=1e-8, atol=1e-8, t_eval=np.linspace(0, T, 1000))
 
-# Рисуем траекторию
-plt.plot(x/R_earth, y/R_earth)
-plt.gca().set_aspect('equal', adjustable='box')
-plt.xlabel('x, R_earth')
-plt.ylabel('y, R_earth')
-plt.title(f'Trajectory of {body}')
+# Создание 3D графика
+fig = plt.figure(figsize=(10, 10))
+ax = fig.add_subplot(111, projection='3d')
+
+# Добавление Земли на график
+earth_radius = 6371000
+u, v = np.mgrid[0:2*np.pi:50j, 0:np.pi:25j]
+x = earth_radius * np.cos(u) * np.sin(v)
+y = earth_radius * np.sin(u) * np.sin(v)
+z = earth_radius * np.cos(v)
+ax.plot_surface(x, y, z, color='blue', alpha=0.3)
+
+# Добавление орбиты МКС
+ax.plot(sol.y[0], sol.y[1], sol.y[2], label='Орбита МКС')
+
+ax.set_xlabel('X (м)')
+ax.set_ylabel('Y (м)')
+ax.set_zlabel('Z (м)')
+ax.set_title('Орбита МКС и Земля в 3D')
+ax.legend()
 plt.show()
