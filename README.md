@@ -1,6 +1,6 @@
 # OrbitCounter
 
-This is a simple script that uses NASA's open data to count the number of orbits made by a satellite around Earth. The data was obtained from https://data.nasa.gov/browse?q=ISS+COORDS.
+This is a simple script that uses NASA's open data to draw an orbit of ISS around Earth. The data was obtained from https://data.nasa.gov/browse?q=ISS+COORDS.
 
 ## Installation
 
